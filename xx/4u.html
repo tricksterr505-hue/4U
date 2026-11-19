@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOVE GACHAPON - Mensive 8-Bit Arcade</title>
+    <!-- Pixel Fonts: Press Start 2P & VT323 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-cream: #FAF3EE;
+            --accent-rose: #D98A9C;
+            --accent-blush: #EBD5D8;
+            --text-plum: #3B2831;
+            --btn-gold: #E8B86D;
+            --sage-pastel: #A8C3A7;
+            --berry-dark: #C46B80;
+        }
+
+        body {
+            background-color: var(--bg-cream);
+            color: var(--text-plum);
+            font-family: 'VT323', monospace;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            background-image:
+                radial-gradient(#EBD5D8 2px, transparent 2px),
+                radial-gradient(#EBD5D8 2px, #FAF3EE 2px);
+            background-size: 32px 32px;
+            background-position: 0 0, 16px 16px;
+        }
+
+        .font-pixel {
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        .font-vt {
+            font-family: 'VT323', monospace;
+        }
+
+        .pixel-art {
+            shape-rendering: crispEdges;
+            image-rendering: pixelated;
+        }
+
+        /* Bingkai Konsol Handheld / Arcade Cozy */
+        .arcade-shell {
+            background-color: #FFFBF8;
+            border: 4px solid var(--text-plum);
+            box-shadow:
+                0 0 0 4px #EBD5D8,
+                0 0 0 8px var(--text-plum),
+                10px 12px 0px rgba(59, 40, 49, 0.25);
+        }
+
+        .arcade-screen-inset {
+            background-color: var(--bg-cream);
+            border: 3px solid var(--text-plum);
+            box-shadow: inset 4px 4px 0px rgba(59, 40, 49, 0.08);
+        }
+
+        /* Tombol Chunky Arcade */
+        .arcade-btn {
+            font-family: 'Press Start 2P', monospace;
+            background-color: var(--btn-gold);
+            color: var(--text-plum);
+            border: 3px solid var(--text-plum);
+            box-shadow: 0 5px 0 var(--text-plum);
+            transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.15s ease;
+        }
+
+        .arcade-btn:hover:not(:disabled) {
+            background-color: #F3C67C;
+        }
+
+        .arcade-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 var(--text-plum);
+        }
+
+        .arcade-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .arcade-btn-rose {
+            background-color: var(--accent-rose);
+            color: #FFFBF8;
+        }
+
+        .arcade-btn-rose:hover:not(:disabled) {
+            background-color: var(--berry-dark);
+        }
+
+        .arcade-btn-sage {
+            background-color: var(--sage-pastel);
+            color: var(--text-plum);
+        }
+
+        .arcade-btn-sage:hover:not(:disabled) {
+            background-color: #B7D1B6;
+        }
+
+        /* Transisi Layar */
+        .stage-view {
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+
+        .stage-hidden {
+            display: none !important;
+        }
+
+        /* Animasi Karakter */
+        @keyframes charIdle {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .animate-char-idle-1 {
+            animation: charIdle 1.1s steps(2, end) infinite;
+        }
+
+        .animate-char-idle-2 {
+            animation: charIdle 1.1s steps(2, end) infinite;
+            animation-delay: 0.55s;
+        }
+
+        @keyframes charCheer {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            25% { transform: translateY(-14px) scale(1.04); }
+            50% { transform: translateY(0px) scale(1); }
+            75% { transform: translateY(-10px) scale(1.04); }
+        }
+
+        .animate-char-cheer {
+            animation: charCheer 0.65s steps(3, end) 2;
+        }
+
+        /* Animasi Mesin Gachapon Bergetar */
+        @keyframes machineVibrate {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-4px, -2px) rotate(-1.5deg); }
+            40% { transform: translate(4px, 1px) rotate(1.5deg); }
+            60% { transform: translate(-3px, 2px) rotate(-1deg); }
+            80% { transform: translate(3px, -1px) rotate(1deg); }
+        }
+
+        .animate-machine-shake {
+            animation: machineVibrate 0.55s steps(3, end) 2;
+        }
+
+        /* Animasi Tuas / Crank Diputar */
+        @keyframes crankSpin {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .animate-crank-spin {
+            transform-origin: center;
+            animation: crankSpin 0.6s steps(4, end);
+        }
+
+        /* Animasi Bola Gacha Keluar & Pop */
+        @keyframes capsuleDropOut {
+            0% { transform: translateY(-24px) scale(0.4) rotate(0deg); opacity: 0; }
+            50% { transform: translateY(6px) scale(1.1) rotate(180deg); opacity: 1; }
+            75% { transform: translateY(-3px) scale(0.95) rotate(270deg); opacity: 1; }
+            100% { transform: translateY(0px) scale(1) rotate(360deg); opacity: 1; }
+        }
+
+        .animate-capsule-drop {
+            animation: capsuleDropOut 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* Animasi Bintang Berkelip & Glow Tombol Rahasia */
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.25; transform: scale(0.75); }
+        }
+
+        .animate-twinkle {
+            animation: twinkle 1.4s steps(2, end) infinite;
+        }
+
+        @keyframes pulseGoldGlow {
+            0%, 100% { box-shadow: 0 5px 0 var(--text-plum), 0 0 0 0 rgba(232, 184, 109, 0.7); }
+            50% { box-shadow: 0 5px 0 var(--text-plum), 0 0 18px 6px rgba(232, 184, 109, 0.9); }
+        }
+
+        .glow-secret-btn {
+            animation: pulseGoldGlow 1.5s infinite;
+        }
+
+        /* Stempel Voucher Klaim */
+        @keyframes stampSlam {
+            0% { transform: scale(2.4) rotate(-18deg); opacity: 0; }
+            70% { transform: scale(0.92) rotate(-8deg); opacity: 1; }
+            100% { transform: scale(1) rotate(-10deg); opacity: 1; }
+        }
+
+        .voucher-stamp {
+            animation: stampSlam 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Partikel Confetti / Hati Pixel */
+        @keyframes confettiFall {
+            0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(85vh) rotate(360deg); opacity: 0; }
+        }
+
+        .pixel-confetti {
+            position: fixed;
+            top: -12px;
+            pointer-events: none;
+            z-index: 60;
+            animation: confettiFall linear forwards;
+        }
+
+        @keyframes floatUpHeart {
+            0% { transform: translateY(0) scale(0.8); opacity: 1; }
+            100% { transform: translateY(-65px) scale(1.25); opacity: 0; }
+        }
+
+        .float-heart {
+            position: fixed;
+            pointer-events: none;
+            z-index: 60;
+            animation: floatUpHeart 0.95s steps(6, end) forwards;
+        }
+
+        @keyframes blinkCursor {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .cursor-blink {
+            display: inline-block;
+            width: 9px;
+            height: 16px;
+            background-color: var(--berry-dark);
+            margin-left: 3px;
+            vertical-align: middle;
+            animation: blinkCursor 0.8s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-3 sm:p-6">
+
+    <!-- ===================================================================== -->
+    <!-- KONSOL POCKET ARCADE UTAMA                                            -->
+    <!-- ===================================================================== -->
+    <main class="arcade-shell rounded-2xl w-full max-w-xl p-3 sm:p-5 flex flex-col">
+
+        <!-- Header Top Bar Konsol: Lampu Power, Judul Mini & Tombol BGM -->
+        <header class="flex items-center justify-between pb-3 mb-3 border-b-2 border-[#EBD5D8]">
+            <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full bg-[#D98A9C] border-2 border-[#3B2831] inline-block animate-pulse"></span>
+                <span class="font-pixel text-[8px] sm:text-[10px] text-[#3B2831] tracking-wider">
+                    LOVE GACHAPON
+                </span>
+            </div>
+
+            <button id="bgm-toggle-btn" type="button" aria-label="Toggle Chiptune BGM" class="bg-[#EBD5D8] hover:bg-[#D98A9C] hover:text-[#FFFBF8] text-[#3B2831] border-2 border-[#3B2831] px-2.5 py-1 rounded-md font-pixel text-[8px] sm:text-[9px] shadow-[2px_2px_0px_#3B2831] transition cursor-pointer">
+                ♪ BGM: OFF
+            </button>
+        </header>
+
+        <!-- Layar Utama Arcade -->
+        <div class="arcade-screen-inset rounded-xl p-4 sm:p-6 relative overflow-hidden min-h-[510px] sm:min-h-[540px] flex flex-col justify-between">
+
+            <!-- ============================================================= -->
+            <!-- STAGE 1: HANDHELD ARCADE INTRO SCREEN                         -->
+            <!-- ============================================================= -->
+            <section id="stage-intro" class="stage-view flex-1 flex flex-col items-center justify-between text-center py-2">
+                <!-- Dekorasi Bintang Pixel Berkelip -->
+                <svg class="pixel-art w-5 h-5 absolute top-5 left-6 animate-twinkle" viewBox="0 0 5 5">
+                    <rect x="2" y="0" width="1" height="5" fill="#E8B86D"/>
+                    <rect x="0" y="2" width="5" height="1" fill="#E8B86D"/>
+                </svg>
+                <svg class="pixel-art w-4 h-4 absolute top-10 right-8 animate-twinkle" style="animation-delay: 0.7s;" viewBox="0 0 5 5">
+                    <rect x="2" y="0" width="1" height="5" fill="#D98A9C"/>
+                    <rect x="0" y="2" width="5" height="1" fill="#D98A9C"/>
+                </svg>
+                <svg class="pixel-art w-4 h-4 absolute bottom-28 left-7 animate-twinkle" style="animation-delay: 0.4s;" viewBox="0 0 5 5">
+                    <rect x="2" y="0" width="1" height="5" fill="#A8C3A7"/>
+                    <rect x="0" y="2" width="5" height="1" fill="#A8C3A7"/>
+                </svg>
+
+                <!-- Judul Arcade -->
+                <div class="space-y-3 mt-2 z-10">
+                    <div class="inline-block bg-[#EBD5D8] border-2 border-[#3B2831] px-3 py-1 rounded-full">
+                        <span class="font-pixel text-[8px] sm:text-[9px] text-[#3B2831] tracking-[0.2em]">
+                            ★ SPECIAL EDITION ★
+                        </span>
+                    </div>
+                    <h1 class="font-pixel text-xl sm:text-3xl text-[#3B2831] leading-snug tracking-wide drop-shadow-[2px_2px_0px_#EBD5D8]">
+                        MENSIVE<br>
+                        <span class="text-[#D98A9C]">ARCADE</span>
+                    </h1>
+                    <p class="font-vt text-xl sm:text-2xl text-[#7A5C68]">
+                        insert love coin &amp; spin for surprises!
+                    </p>
+                </div>
+
+                <!-- Kedua Karakter Cowok Pixel Berdampingan -->
+                <div class="relative flex items-end justify-center space-x-6 sm:space-x-10 my-4 z-10">
+                    <!-- Hati Pixel Mengambang di Tengah Atas -->
+                    <svg class="pixel-art w-9 h-8 absolute -top-6 left-1/2 -translate-x-1/2 animate-char-idle-1" viewBox="0 0 9 8">
+                        <rect x="1" y="1" width="2" height="1" fill="#D98A9C"/>
+                        <rect x="6" y="1" width="2" height="1" fill="#D98A9C"/>
+                        <rect x="0" y="2" width="4" height="2" fill="#D98A9C"/>
+                        <rect x="5" y="2" width="4" height="2" fill="#D98A9C"/>
+                        <rect x="4" y="3" width="1" height="1" fill="#D98A9C"/>
+                        <rect x="1" y="4" width="7" height="1" fill="#D98A9C"/>
+                        <rect x="2" y="5" width="5" height="1" fill="#D98A9C"/>
+                        <rect x="3" y="6" width="3" height="1" fill="#D98A9C"/>
+                        <rect x="4" y="7" width="1" height="1" fill="#D98A9C"/>
+                        <rect x="1" y="2" width="1" height="1" fill="#FFFBF8"/>
+                    </svg>
+
+                    <!-- KARAKTER KIRI (Sedikit lebih pendek: Beanie hitam, rambut cokelat mengintip, polo navy aksen merah-putih, manset putih) -->
+                    <div class="animate-char-idle-1 flex flex-col items-center">
+                        <svg class="pixel-art w-24 h-36 sm:w-28 sm:h-40" viewBox="0 0 12 19" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Beanie Hitam -->
+                            <rect x="3" y="2" width="6" height="1" fill="#222024"/>
+                            <rect x="2" y="3" width="8" height="2" fill="#222024"/>
+                            <rect x="2" y="5" width="8" height="1" fill="#171519"/>
+                            <!-- Rambut Cokelat Gelap Mengintip -->
+                            <rect x="1" y="6" width="1" height="3" fill="#3D281E"/>
+                            <rect x="10" y="6" width="1" height="3" fill="#3D281E"/>
+                            <!-- Wajah -->
+                            <rect x="2" y="6" width="8" height="4" fill="#F7D3BA"/>
+                            <rect x="2" y="9" width="8" height="1" fill="#E8BCA0"/>
+                            <!-- Mata -->
+                            <rect x="4" y="7" width="1" height="1" fill="#3B2831"/>
+                            <rect x="7" y="7" width="1" height="1" fill="#3B2831"/>
+                            <!-- Rona Pipi -->
+                            <rect x="3" y="8" width="1" height="1" fill="#EE9CA7"/>
+                            <rect x="8" y="8" width="1" height="1" fill="#EE9CA7"/>
+                            <!-- Polo Navy + Inner Putih -->
+                            <rect x="5" y="10" width="2" height="1" fill="#FFFFFF"/>
+                            <rect x="2" y="10" width="3" height="4" fill="#1E2749"/>
+                            <rect x="7" y="10" width="3" height="4" fill="#1E2749"/>
+                            <rect x="5" y="11" width="2" height="3" fill="#1E2749"/>
+                            <!-- Aksen Merah & Putih -->
+                            <rect x="2" y="12" width="1" height="2" fill="#C93B3B"/>
+                            <rect x="8" y="11" width="1" height="1" fill="#FFFFFF"/>
+                            <rect x="7" y="13" width="2" height="1" fill="#C93B3B"/>
+                            <!-- Lengan & Manset Putih -->
+                            <rect x="1" y="11" width="1" height="2" fill="#1E2749"/>
+                            <rect x="10" y="11" width="1" height="2" fill="#1E2749"/>
+                            <rect x="1" y="13" width="1" height="1" fill="#FFFFFF"/>
+                            <rect x="10" y="13" width="1" height="1" fill="#FFFFFF"/>
+                            <rect x="1" y="14" width="1" height="1" fill="#F7D3BA"/>
+                            <rect x="10" y="14" width="1" height="1" fill="#F7D3BA"/>
+                            <!-- Celana Gelap -->
+                            <rect x="3" y="14" width="6" height="1" fill="#222024"/>
+                            <rect x="3" y="15" width="2" height="2" fill="#222024"/>
+                            <rect x="7" y="15" width="2" height="2" fill="#222024"/>
+                            <!-- Sneakers -->
+                            <rect x="3" y="17" width="2" height="1" fill="#FFFBF8"/>
+                            <rect x="7" y="17" width="2" height="1" fill="#FFFBF8"/>
+                            <!-- Bayangan Lantai -->
+                            <rect x="2" y="18" width="8" height="1" fill="#EBD5D8"/>
+                        </svg>
+                    </div>
+
+                    <!-- KARAKTER KANAN (Sedikit lebih tinggi: Rambut blonde messy/spiky, kemeja abu-abu muda kerah dalam hitam) -->
+                    <div class="animate-char-idle-2 flex flex-col items-center">
+                        <svg class="pixel-art w-24 h-36 sm:w-28 sm:h-40" viewBox="0 0 12 19" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Rambut Blonde Messy / Spiky -->
+                            <rect x="3" y="0" width="1" height="1" fill="#E6C27A"/>
+                            <rect x="5" y="0" width="2" height="1" fill="#F0D395"/>
+                            <rect x="8" y="0" width="1" height="1" fill="#E6C27A"/>
+                            <rect x="2" y="1" width="8" height="2" fill="#E6C27A"/>
+                            <rect x="3" y="1" width="2" height="1" fill="#F3D9A4"/>
+                            <rect x="7" y="2" width="2" height="1" fill="#C79E52"/>
+                            <rect x="1" y="2" width="1" height="3" fill="#C79E52"/>
+                            <rect x="10" y="2" width="1" height="3" fill="#C79E52"/>
+                            <rect x="2" y="3" width="8" height="1" fill="#E6C27A"/>
+                            <!-- Wajah -->
+                            <rect x="2" y="4" width="8" height="4" fill="#F7D3BA"/>
+                            <rect x="2" y="4" width="2" height="1" fill="#C79E52"/>
+                            <rect x="5" y="4" width="1" height="1" fill="#E6C27A"/>
+                            <rect x="8" y="4" width="2" height="1" fill="#C79E52"/>
+                            <rect x="3" y="7" width="6" height="1" fill="#E8BCA0"/>
+                            <!-- Mata -->
+                            <rect x="4" y="5" width="1" height="1" fill="#3B2831"/>
+                            <rect x="7" y="5" width="1" height="1" fill="#3B2831"/>
+                            <!-- Rona Pipi -->
+                            <rect x="3" y="6" width="1" height="1" fill="#EE9CA7"/>
+                            <rect x="8" y="6" width="1" height="1" fill="#EE9CA7"/>
+                            <!-- Kemeja Abu-Abu Muda & Kerah Dalam Hitam -->
+                            <rect x="4" y="8" width="4" height="1" fill="#222024"/>
+                            <rect x="5" y="9" width="2" height="1" fill="#222024"/>
+                            <rect x="2" y="8" width="2" height="6" fill="#B8C0C8"/>
+                            <rect x="8" y="8" width="2" height="6" fill="#B8C0C8"/>
+                            <rect x="4" y="9" width="1" height="5" fill="#B8C0C8"/>
+                            <rect x="7" y="9" width="1" height="5" fill="#B8C0C8"/>
+                            <rect x="5" y="10" width="2" height="4" fill="#B8C0C8"/>
+                            <!-- Kancing -->
+                            <rect x="5" y="11" width="1" height="1" fill="#3B2831"/>
+                            <rect x="5" y="13" width="1" height="1" fill="#3B2831"/>
+                            <!-- Lengan & Tangan -->
+                            <rect x="1" y="9" width="1" height="3" fill="#A5AEB7"/>
+                            <rect x="10" y="9" width="1" height="3" fill="#A5AEB7"/>
+                            <rect x="1" y="12" width="1" height="1" fill="#F7D3BA"/>
+                            <rect x="10" y="12" width="1" height="1" fill="#F7D3BA"/>
+                            <!-- Celana Gelap -->
+                            <rect x="3" y="14" width="6" height="1" fill="#222024"/>
+                            <rect x="3" y="15" width="2" height="2" fill="#222024"/>
+                            <rect x="7" y="15" width="2" height="2" fill="#222024"/>
+                            <!-- Sneakers -->
+                            <rect x="3" y="17" width="2" height="1" fill="#3B2831"/>
+                            <rect x="7" y="17" width="2" height="1" fill="#3B2831"/>
+                            <!-- Bayangan Lantai -->
+                            <rect x="2" y="18" width="8" height="1" fill="#EBD5D8"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Tombol PRESS START -->
+                <div class="flex flex-col items-center space-y-2 mb-2 z-10">
+                    <button id="press-start-btn" type="button" class="arcade-btn rounded-xl px-7 py-4 text-xs sm:text-sm tracking-[0.15em] cursor-pointer">
+                        PRESS START
+                    </button>
+                    <span class="font-pixel text-[8px] text-[#8C6D79] animate-pulse">
+                        1P &amp; 2P READY
+                    </span>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- STAGE 2: INTERACTIVE LOVE GACHAPON MACHINE (MAIN HUB)         -->
+            <!-- ============================================================= -->
+            <section id="stage-gacha" class="stage-view stage-hidden flex-1 flex flex-col items-center justify-between">
+                <!-- Header Status Kapsul -->
+                <div class="w-full flex items-center justify-between mb-1">
+                    <span class="font-pixel text-[8px] sm:text-[9px] text-[#3B2831] bg-[#EBD5D8] border-2 border-[#3B2831] px-2.5 py-1 rounded">
+                        CAPSULES: <span id="capsule-counter">0/5</span>
+                    </span>
+                    <span class="font-vt text-lg sm:text-xl text-[#C46B80]">
+                        putar untuk buka hadiah!
+                    </span>
+                </div>
+
+                <!-- Panggung Mesin Gachapon Diapit Dua Karakter -->
+                <div class="relative w-full flex items-end justify-center my-1 pt-2">
+                    <!-- Karakter Kiri Berdiri Mendampingi Mesin -->
+                    <div id="gacha-char-left" class="animate-char-idle-1 -mr-1 sm:mr-2 z-10">
+                        <svg class="pixel-art w-16 h-24 sm:w-20 sm:h-32" viewBox="0 0 12 19" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="2" width="6" height="1" fill="#222024"/>
+                            <rect x="2" y="3" width="8" height="2" fill="#222024"/>
+                            <rect x="2" y="5" width="8" height="1" fill="#171519"/>
+                            <rect x="1" y="6" width="1" height="3" fill="#3D281E"/>
+                            <rect x="10" y="6" width="1" height="3" fill="#3D281E"/>
+                            <rect x="2" y="6" width="8" height="4" fill="#F7D3BA"/>
+                            <rect x="4" y="7" width="1" height="1" fill="#3B2831"/>
+                            <rect x="7" y="7" width="1" height="1" fill="#3B2831"/>
+                            <rect x="3" y="8" width="1" height="1" fill="#EE9CA7"/>
+                            <rect x="8" y="8" width="1" height="1" fill="#EE9CA7"/>
+                            <rect x="5" y="10" width="2" height="1" fill="#FFFFFF"/>
+                            <rect x="2" y="10" width="3" height="4" fill="#1E2749"/>
+                            <rect x="7" y="10" width="3" height="4" fill="#1E2749"/>
+                            <rect x="5" y="11" width="2" height="3" fill="#1E2749"/>
+                            <rect x="2" y="12" width="1" height="2" fill="#C93B3B"/>
+                            <rect x="8" y="11" width="1" height="1" fill="#FFFFFF"/>
+                            <rect x="1" y="11" width="1" height="2" fill="#1E2749"/>
+                            <rect x="10" y="11" width="1" height="2" fill="#1E2749"/>
+                            <rect x="1" y="13" width="1" height="1" fill="#FFFFFF"/>
+                            <rect x="10" y="13" width="1" height="1" fill="#FFFFFF"/>
+                            <rect x="3" y="14" width="6" height="1" fill="#222024"/>
+                            <rect x="3" y="15" width="2" height="2" fill="#222024"/>
+                            <rect x="7" y="15" width="2" height="2" fill="#222024"/>
+                            <rect x="3" y="17" width="2" height="1" fill="#FFFBF8"/>
+                            <rect x="7" y="17" width="2" height="1" fill="#FFFBF8"/>
+                        </svg>
+                    </div>
+
+                    <!-- MESIN LOVE GACHAPON PIXEL ART -->
+                    <div id="gachapon-machine" class="relative z-20 flex flex-col items-center">
+                        <svg class="pixel-art w-44 h-56 sm:w-52 sm:h-64" viewBox="0 0 32 42" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Topper Mahkota Hati di Atas Mesin -->
+                            <rect x="13" y="0" width="2" height="1" fill="#D98A9C"/>
+                            <rect x="17" y="0" width="2" height="1" fill="#D98A9C"/>
+                            <rect x="12" y="1" width="8" height="2" fill="#D98A9C"/>
+                            <rect x="14" y="3" width="4" height="1" fill="#D98A9C"/>
+
+                            <!-- Tutup Atas Mesin (Dusty Rose) -->
+                            <rect x="6" y="4" width="20" height="3" fill="#3B2831"/>
+                            <rect x="7" y="5" width="18" height="2" fill="#D98A9C"/>
+                            <rect x="8" y="5" width="16" height="1" fill="#E8A5B4"/>
+
+                            <!-- Kubah Kaca Transparan Berisi Kapsul -->
+                            <rect x="4" y="7" width="24" height="16" fill="#3B2831"/>
+                            <rect x="5" y="8" width="22" height="14" fill="#FFFBF8"/>
+                            <!-- Kilau Kaca -->
+                            <rect x="7" y="9" width="2" height="8" fill="#EBD5D8"/>
+                            <rect x="7" y="18" width="2" height="2" fill="#EBD5D8"/>
+
+                            <!-- Bola-Bola Kapsul di Dalam Kubah (id untuk animasi hilang bertahap) -->
+                            <!-- Kapsul A (Sage) -->
+                            <g id="dome-ball-1">
+                                <rect x="8" y="17" width="5" height="4" fill="#3B2831"/>
+                                <rect x="9" y="18" width="3" height="1" fill="#A8C3A7"/>
+                                <rect x="9" y="19" width="3" height="1" fill="#FFFBF8"/>
+                            </g>
+                            <!-- Kapsul B (Dusty Rose) -->
+                            <g id="dome-ball-2">
+                                <rect x="14" y="16" width="5" height="5" fill="#3B2831"/>
+                                <rect x="15" y="17" width="3" height="2" fill="#D98A9C"/>
+                                <rect x="15" y="19" width="3" height="1" fill="#FFFBF8"/>
+                            </g>
+                            <!-- Kapsul C (Lavender) -->
+                            <g id="dome-ball-3">
+                                <rect x="19" y="17" width="5" height="4" fill="#3B2831"/>
+                                <rect x="20" y="18" width="3" height="1" fill="#C4B0D9"/>
+                                <rect x="20" y="19" width="3" height="1" fill="#FFFBF8"/>
+                            </g>
+                            <!-- Kapsul D (Blush Pink) -->
+                            <g id="dome-ball-4">
+                                <rect x="10" y="12" width="5" height="4" fill="#3B2831"/>
+                                <rect x="11" y="13" width="3" height="1" fill="#EE9CA7"/>
+                                <rect x="11" y="14" width="3" height="1" fill="#FFFBF8"/>
+                            </g>
+                            <!-- Kapsul E (Golden Key Capsule - Paling Spesial) -->
+                            <g id="dome-ball-5">
+                                <rect x="16" y="11" width="5" height="5" fill="#3B2831"/>
+                                <rect x="17" y="12" width="3" height="2" fill="#E8B86D"/>
+                                <rect x="17" y="14" width="3" height="1" fill="#FFFBF8"/>
+                            </g>
+
+                            <!-- Badan Bawah Mesin Gachapon (Dusty Rose & Blush) -->
+                            <rect x="5" y="23" width="22" height="15" fill="#3B2831"/>
+                            <rect x="6" y="24" width="20" height="13" fill="#D98A9C"/>
+                            <rect x="6" y="24" width="20" height="2" fill="#E8A5B4"/>
+
+                            <!-- Panel Putar Tuas / Crank di Tengah Kanan -->
+                            <rect x="18" y="27" width="6" height="6" fill="#3B2831"/>
+                            <rect x="19" y="28" width="4" height="4" fill="#FFFBF8"/>
+                            <g id="gacha-crank">
+                                <rect x="20" y="27" width="2" height="6" fill="#E8B86D"/>
+                                <rect x="18" y="29" width="6" height="2" fill="#E8B86D"/>
+                                <rect x="20" y="29" width="2" height="2" fill="#3B2831"/>
+                            </g>
+
+                            <!-- Lubang Pengambilan Kapsul (Chute) di Kiri Bawah -->
+                            <rect x="8" y="28" width="8" height="7" fill="#3B2831"/>
+                            <rect x="9" y="29" width="6" height="5" fill="#222024"/>
+                            <rect x="9" y="29" width="6" height="1" fill="#523A44"/>
+
+                            <!-- Kaki Mesin -->
+                            <rect x="6" y="38" width="4" height="3" fill="#3B2831"/>
+                            <rect x="22" y="38" width="4" height="3" fill="#3B2831"/>
+                        </svg>
+
+                        <!-- Kapsul yang Keluar dari Chute Saat Diputar -->
+                        <div id="dispensed-capsule" class="hidden absolute bottom-8 left-9 sm:left-11 pointer-events-none">
+                            <svg class="pixel-art w-9 h-9" viewBox="0 0 7 7">
+                                <rect x="1" y="0" width="5" height="7" fill="#3B2831"/>
+                                <rect x="0" y="1" width="7" height="5" fill="#3B2831"/>
+                                <rect id="dispensed-top-color" x="1" y="1" width="5" height="3" fill="#E8B86D"/>
+                                <rect x="1" y="4" width="5" height="2" fill="#FFFBF8"/>
+                                <rect x="2" y="2" width="1" height="1" fill="#FFFBF8"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Karakter Kanan Berdiri Mendampingi Mesin -->
+                    <div id="gacha-char-right" class="animate-char-idle-2 -ml-1 sm:ml-2 z-10">
+                        <svg class="pixel-art w-16 h-24 sm:w-20 sm:h-32" viewBox="0 0 12 19" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="0" width="1" height="1" fill="#E6C27A"/>
+                            <rect x="5" y="0" width="2" height="1" fill="#F0D395"/>
+                            <rect x="8" y="0" width="1" height="1" fill="#E6C27A"/>
+                            <rect x="2" y="1" width="8" height="2" fill="#E6C27A"/>
+                            <rect x="1" y="2" width="1" height="3" fill="#C79E52"/>
+                            <rect x="10" y="2" width="1" height="3" fill="#C79E52"/>
+                            <rect x="2" y="3" width="8" height="1" fill="#E6C27A"/>
+                            <rect x="2" y="4" width="8" height="4" fill="#F7D3BA"/>
+                            <rect x="4" y="5" width="1" height="1" fill="#3B2831"/>
+                            <rect x="7" y="5" width="1" height="1" fill="#3B2831"/>
+                            <rect x="3" y="6" width="1" height="1" fill="#EE9CA7"/>
+                            <rect x="8" y="6" width="1" height="1" fill="#EE9CA7"/>
+                            <rect x="4" y="8" width="4" height="1" fill="#222024"/>
+                            <rect x="5" y="9" width="2" height="1" fill="#222024"/>
+                            <rect x="2" y="8" width="2" height="6" fill="#B8C0C8"/>
+                            <rect x="8" y="8" width="2" height="6" fill="#B8C0C8"/>
+                            <rect x="4" y="9" width="1" height="5" fill="#B8C0C8"/>
+                            <rect x="7" y="9" width="1" height="5" fill="#B8C0C8"/>
+                            <rect x="5" y="10" width="2" height="4" fill="#B8C0C8"/>
+                            <rect x="5" y="11" width="1" height="1" fill="#3B2831"/>
+                            <rect x="5" y="13" width="1" height="1" fill="#3B2831"/>
+                            <rect x="1" y="9" width="1" height="3" fill="#A5AEB7"/>
+                            <rect x="10" y="9" width="1" height="3" fill="#A5AEB7"/>
+                            <rect x="3" y="14" width="6" height="1" fill="#222024"/>
+                            <rect x="3" y="15" width="2" height="2" fill="#222024"/>
+                            <rect x="7" y="15" width="2" height="2" fill="#222024"/>
+                            <rect x="3" y="17" width="2" height="1" fill="#3B2831"/>
+                            <rect x="7" y="17" width="2" height="1" fill="#3B2831"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Tombol Aksi Utama: PUTAR GACHA / BUKA SURAT RAHASIA -->
+                <div class="w-full flex flex-col items-center space-y-2 my-2">
+                    <button id="spin-gacha-btn" type="button" class="arcade-btn arcade-btn-rose rounded-xl px-6 py-3.5 text-[10px] sm:text-xs tracking-wider cursor-pointer w-full max-w-xs">
+                        PUTAR GACHA (5/5)
+                    </button>
+
+                    <button id="open-secret-letter-btn" type="button" class="hidden arcade-btn glow-secret-btn rounded-xl px-6 py-3.5 text-[10px] sm:text-xs tracking-wider cursor-pointer w-full max-w-xs">
+                        ★ BUKA SURAT RAHASIA ★
+                    </button>
+                </div>
+
+                <!-- Tray KOLEKSI KAPSUL (5 Slot) -->
+                <div class="w-full bg-[#FFFBF8] border-2 border-[#3B2831] rounded-xl p-2.5 mt-1">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-pixel text-[8px] text-[#3B2831]">
+                            KOLEKSI KAPSUL (TAP UNTUK BACA)
+                        </span>
+                    </div>
+                    <div id="collection-tray" class="grid grid-cols-5 gap-2">
+                        <!-- 5 Slot Kapsul akan dirender lewat JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- STAGE 3: FINAL UNLOCKED SECRET LETTER & PIXEL FIREWORKS       -->
+            <!-- ============================================================= -->
+            <section id="stage-letter" class="stage-view stage-hidden flex-1 flex flex-col items-center justify-between">
+                <!-- Header Chibi Berdua + Hati Pixel -->
+                <div class="w-full flex flex-col items-center text-center mb-2">
+                    <div class="flex items-center justify-center space-x-3 mb-2">
+                        <!-- Mini Chibi Portrait Kiri & Kanan Bersanding -->
+                        <svg class="pixel-art w-24 h-16 sm:w-28 sm:h-18" viewBox="0 0 24 14" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Bingkai Kartu Pastel -->
+                            <rect x="0" y="1" width="24" height="12" fill="#3B2831"/>
+                            <rect x="1" y="2" width="22" height="10" fill="#EBD5D8"/>
+                            <!-- Chibi Kiri (Beanie Hitam & Polo Navy) -->
+                            <rect x="3" y="3" width="5" height="2" fill="#222024"/>
+                            <rect x="3" y="5" width="5" height="3" fill="#F7D3BA"/>
+                            <rect x="4" y="6" width="1" height="1" fill="#3B2831"/>
+                            <rect x="6" y="6" width="1" height="1" fill="#3B2831"/>
+                            <rect x="3" y="8" width="5" height="3" fill="#1E2749"/>
+                            <rect x="5" y="8" width="1" height="1" fill="#FFFFFF"/>
+
+                            <!-- Hati Pixel di Tengah Antara Keduanya -->
+                            <rect x="10" y="4" width="1" height="1" fill="#C46B80"/>
+                            <rect x="13" y="4" width="1" height="1" fill="#C46B80"/>
+                            <rect x="9" y="5" width="6" height="2" fill="#C46B80"/>
+                            <rect x="10" y="7" width="4" height="1" fill="#C46B80"/>
+                            <rect x="11" y="8" width="2" height="1" fill="#C46B80"/>
+
+                            <!-- Chibi Kanan (Rambut Blonde & Kemeja Abu) -->
+                            <rect x="16" y="2" width="5" height="2" fill="#E6C27A"/>
+                            <rect x="16" y="4" width="5" height="4" fill="#F7D3BA"/>
+                            <rect x="17" y="5" width="1" height="1" fill="#3B2831"/>
+                            <rect x="19" y="5" width="1" height="1" fill="#3B2831"/>
+                            <rect x="16" y="8" width="5" height="3" fill="#B8C0C8"/>
+                            <rect x="17" y="8" width="3" height="1" fill="#222024"/>
+                        </svg>
+                    </div>
+
+                    <h2 class="font-pixel text-base sm:text-xl text-[#3B2831] tracking-wide">
+                        HAPPY <span class="text-[#D98A9C]">MENSIVE!</span>
+                    </h2>
+                    <p class="font-pixel text-[8px] text-[#7A5C68] mt-1">
+                        SECRET STAGE UNLOCKED ♥
+                    </p>
+                </div>
+
+                <!-- Kartu Surat Stationery Pixel -->
+                <div class="w-full bg-[#FFFBF8] border-3 border-[#3B2831] rounded-xl p-4 sm:p-5 shadow-[4px_4px_0px_#EBD5D8] my-1 flex-1 flex flex-col justify-between">
+                    <div class="flex items-center justify-between border-b-2 border-dashed border-[#EBD5D8] pb-2 mb-3">
+                        <span class="font-pixel text-[8px] sm:text-[9px] text-[#C46B80]">
+                            ★ GOLDEN KEY LETTER
+                        </span>
+                        <button id="show-all-letter-btn" type="button" class="font-pixel text-[8px] text-[#7A5C68] hover:text-[#3B2831] underline cursor-pointer">
+                            TAMPILKAN SEMUA
+                        </button>
+                    </div>
+
+                    <div class="text-lg sm:text-xl leading-snug text-[#3B2831] whitespace-pre-line overflow-y-auto max-h-[210px] pr-1">
+                        <span id="secret-letter-text"></span><span id="secret-letter-cursor" class="cursor-blink"></span>
+                    </div>
+
+                    <div class="mt-3 pt-2 border-t-2 border-dashed border-[#EBD5D8] flex items-center justify-between">
+                        <span class="font-pixel text-[8px] text-[#A8C3A7]">
+                            100% COMPLETE
+                        </span>
+                        <span class="font-vt text-xl text-[#C46B80]">
+                            — yours always ♥
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Tombol Bawah: Kembali ke Gachapon atau Main Lagi -->
+                <div class="w-full flex items-center justify-between gap-2 mt-3">
+                    <button id="back-to-gacha-btn" type="button" class="arcade-btn arcade-btn-sage rounded-lg px-3.5 py-2.5 text-[8px] sm:text-[9px] cursor-pointer">
+                        ← KOLEKSI
+                    </button>
+                    <button id="reset-game-btn" type="button" class="arcade-btn rounded-lg px-4 py-2.5 text-[8px] sm:text-[9px] cursor-pointer">
+                        ↻ MAIN LAGI
+                    </button>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Footer Dekoratif D-Pad & Tombol A/B Konsol -->
+        <footer class="flex items-center justify-between pt-3 mt-2 px-2">
+            <!-- D-Pad Pixel Dekoratif -->
+            <div class="flex items-center space-x-2">
+                <svg class="pixel-art w-8 h-8" viewBox="0 0 9 9">
+                    <rect x="3" y="0" width="3" height="9" fill="#3B2831"/>
+                    <rect x="0" y="3" width="9" height="3" fill="#3B2831"/>
+                    <rect x="4" y="1" width="1" height="7" fill="#523A44"/>
+                    <rect x="1" y="4" width="7" height="1" fill="#523A44"/>
+                </svg>
+                <span class="font-pixel text-[7px] text-[#8C6D79] hidden sm:inline">
+                    POCKET EDITION
+                </span>
+            </div>
+
+            <!-- Tombol B & A Dekoratif -->
+            <div class="flex items-center space-x-3">
+                <div class="flex flex-col items-center">
+                    <span class="w-6 h-6 rounded-full bg-[#D98A9C] border-2 border-[#3B2831] shadow-[1px_2px_0px_#3B2831] inline-block"></span>
+                    <span class="font-pixel text-[7px] text-[#3B2831] mt-1">B</span>
+                </div>
+                <div class="flex flex-col items-center -mt-2">
+                    <span class="w-6 h-6 rounded-full bg-[#E8B86D] border-2 border-[#3B2831] shadow-[1px_2px_0px_#3B2831] inline-block"></span>
+                    <span class="font-pixel text-[7px] text-[#3B2831] mt-1">A</span>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL POP-UP ISI KAPSUL (Catatan Manis / Voucher Kencan / Golden Key) -->
+    <!-- ===================================================================== -->
+    <div id="capsule-modal" class="hidden fixed inset-0 z-50 bg-[#3B2831]/50 backdrop-blur-[2px] flex items-center justify-center p-4">
+        <div class="bg-[#FFFBF8] border-4 border-[#3B2831] rounded-2xl shadow-[8px_8px_0px_#EBD5D8,8px_8px_0px_4px_#3B2831] w-full max-w-sm p-5 relative">
+            <!-- Header Modal -->
+            <div class="flex items-center justify-between border-b-2 border-[#EBD5D8] pb-2.5 mb-3">
+                <span id="modal-capsule-badge" class="font-pixel text-[8px] px-2.5 py-1 rounded border-2 border-[#3B2831] bg-[#EBD5D8] text-[#3B2831]">
+                    CAPSULE #1
+                </span>
+                <button id="close-capsule-modal" type="button" aria-label="Tutup" class="font-pixel text-xs text-[#3B2831] hover:text-[#C46B80] px-2 py-1 cursor-pointer">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Ikon Kapsul Besar -->
+            <div class="flex justify-center my-2">
+                <div id="modal-capsule-icon" class="w-14 h-14 rounded-xl border-2 border-[#3B2831] flex items-center justify-center shadow-[3px_3px_0px_#3B2831]">
+                    <!-- Diisi lewat JS -->
+                </div>
+            </div>
+
+            <!-- Konten Kartu (Teks Biasa atau Kupon Voucher) -->
+            <div id="modal-card-box" class="text-center my-3">
+                <h3 id="modal-capsule-title" class="font-pixel text-xs sm:text-sm text-[#C46B80] leading-relaxed mb-2">
+                    Judul Kapsul
+                </h3>
+                <p id="modal-capsule-desc" class="font-vt text-xl sm:text-2xl text-[#3B2831] leading-snug">
+                    Isi pesan kapsul...
+                </p>
+
+                <!-- Area Tombol Klaim Khusus Kartu Voucher -->
+                <div id="voucher-claim-area" class="hidden mt-4 pt-3 border-t-2 border-dashed border-[#D98A9C] relative">
+                    <button id="claim-voucher-btn" type="button" class="arcade-btn arcade-btn-sage rounded-lg px-4 py-2.5 text-[9px] sm:text-[10px] cursor-pointer">
+                        KLAIM VOUCHER
+                    </button>
+                    <div id="voucher-stamped-badge" class="hidden inline-block border-2 border-[#C46B80] text-[#C46B80] bg-[#FAF3EE] px-3 py-1 rounded font-pixel text-[9px] voucher-stamp">
+                        ★ DIKLAIM!
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tombol Simpan -->
+            <div class="mt-4 flex justify-center">
+                <button id="save-capsule-btn" type="button" class="arcade-btn rounded-xl px-6 py-2.5 text-[10px] cursor-pointer w-full">
+                    SIMPAN KE KOLEKSI ♥
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================================
+        // 1. DATA 5 KAPSUL GACHAPON & SURAT RAHASIA (Siap Diedit/Dipersonalisasi)
+        // =====================================================================
+        const CAPSULES_DATA = [
+            {
+                id: 1,
+                type: "note",
+                badge: "CAPSULE #1 • MEMORY",
+                colorHex: "#A8C3A7", // Sage Pastel
+                domeId: "dome-ball-1",
+                shortName: "MEMORY",
+                title: "Bahagia Bareng Kamu",
+                desc: "Makasih ya udah bikin hari-hariku jauh lebih seru dan nyaman. Hal-hal sederhana aja rasanya selalu spesial kalau dijalanin bareng kamu.",
+                iconSvg: `<svg class="pixel-art w-8 h-8" viewBox="0 0 7 7"><rect x="1" y="1" width="2" height="1" fill="#FFFBF8"/><rect x="4" y="1" width="2" height="1" fill="#FFFBF8"/><rect x="1" y="2" width="5" height="2" fill="#FFFBF8"/><rect x="2" y="4" width="3" height="1" fill="#FFFBF8"/><rect x="3" y="5" width="1" height="1" fill="#FFFBF8"/></svg>`
+            },
+            {
+                id: 2,
+                type: "voucher",
+                badge: "CAPSULE #2 • COUPON",
+                colorHex: "#D98A9C", // Dusty Rose
+                domeId: "dome-ball-2",
+                shortName: "VOUCHER 1",
+                title: "VOUCHER BEBAS PILIH MAKAN",
+                desc: "Berlaku kapan aja! Kamu bebas pilih makanan atau jajanan favorit kamu, dan aku yang traktir penuh tanpa protes.",
+                claimed: false,
+                iconSvg: `<svg class="pixel-art w-8 h-8" viewBox="0 0 7 7"><rect x="1" y="2" width="5" height="3" fill="#FFFBF8"/><rect x="2" y="3" width="3" height="1" fill="#D98A9C"/><rect x="3" y="1" width="1" height="5" fill="#E8B86D"/></svg>`
+            },
+            {
+                id: 3,
+                type: "note",
+                badge: "CAPSULE #3 • COMPLIMENT",
+                colorHex: "#C4B0D9", // Lavender Pastel
+                domeId: "dome-ball-3",
+                shortName: "FAVORITE",
+                title: "Hal Favoritku Dari Kamu",
+                desc: "Aku selalu suka cara kamu perhatian sama detail kecil, ketawa lepas kamu, dan gimana nyamannya tiap kali kita lagi ngobrol berdua.",
+                iconSvg: `<svg class="pixel-art w-8 h-8" viewBox="0 0 7 7"><rect x="3" y="0" width="1" height="7" fill="#FFFBF8"/><rect x="0" y="3" width="7" height="1" fill="#FFFBF8"/><rect x="2" y="2" width="3" height="3" fill="#FFFBF8"/></svg>`
+            },
+            {
+                id: 4,
+                type: "voucher",
+                badge: "CAPSULE #4 • COUPON",
+                colorHex: "#EE9CA7", // Blush Pink
+                domeId: "dome-ball-4",
+                shortName: "VOUCHER 2",
+                title: "VOUCHER MOVIE NIGHT & CUDDLE",
+                desc: "Satu sesi marathon film atau anime pilihan kamu lengkap sama camilan favorit dan waktu quality time berdua seharian!",
+                claimed: false,
+                iconSvg: `<svg class="pixel-art w-8 h-8" viewBox="0 0 7 7"><rect x="1" y="1" width="5" height="5" fill="#FFFBF8"/><rect x="2" y="2" width="1" height="1" fill="#3B2831"/><rect x="4" y="2" width="1" height="1" fill="#3B2831"/><rect x="2" y="4" width="3" height="1" fill="#C46B80"/></svg>`
+            },
+            {
+                id: 5,
+                type: "key",
+                badge: "CAPSULE #5 • GOLDEN KEY",
+                colorHex: "#E8B86D", // Soft Gold
+                domeId: "dome-ball-5",
+                shortName: "SECRET KEY",
+                title: "KUNCI SURAT RAHASIA!",
+                desc: "Selamat! Kamu nemuin kapsul emas terakhir. Tombol 'BUKA SURAT RAHASIA' di layar mesin sekarang sudah terbuka!",
+                iconSvg: `<svg class="pixel-art w-8 h-8" viewBox="0 0 7 7"><rect x="2" y="1" width="3" height="2" fill="#FFFBF8"/><rect x="3" y="3" width="1" height="3" fill="#FFFBF8"/><rect x="4" y="4" width="1" height="1" fill="#FFFBF8"/><rect x="4" y="6" width="1" height="1" fill="#FFFBF8"/></svg>`
+            }
+        ];
+
+        const SECRET_LETTER_CONTENT = `Dear you,
+
+Happy Mensive! Terima kasih sudah selalu hadir, sabar, dan jadi tempat pulang paling nyaman buat aku.
+
+Setiap momen bareng kamu—dari hal paling receh sampai cerita panjang tengah malam—selalu jadi bagian favorit dalam hariku. Semoga kita terus saling jaga, makin kompak, dan makin banyak mimpi seru yang bisa kita wujudin bareng ke depannya.`;
+
+        // =====================================================================
+        // 2. WEB AUDIO API: CHIPTUNE BGM & ARCADE SOUND EFFECTS
+        // =====================================================================
+        let audioCtx = null;
+        let isBgmOn = false;
+        let bgmInterval = null;
+        let bgmStep = 0;
+
+        // Melodi 8-bit ceria namun lembut (Music box / Pocket Arcade vibe)
+        const BGM_SEQUENCE = [
+            523.25, 659.25, 783.99, 659.25,
+            880.00, 783.99, 659.25, 587.33,
+            698.46, 880.00, 1046.50, 880.00,
+            783.99, 659.25, 587.33, 523.25
+        ];
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) audioCtx = new AudioCtx();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type = 'triangle', duration = 0.2, volume = 0.04, delay = 0) {
+            if (!audioCtx) return;
+            try {
+                const startTime = audioCtx.currentTime + delay;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, startTime);
+
+                gain.gain.setValueAtTime(volume, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            } catch (e) {}
+        }
+
+        // SFX 1: Coin Insert (PRESS START)
+        function sfxCoinInsert() {
+            initAudio();
+            playTone(987.77, 'square', 0.1, 0.04, 0);
+            playTone(1318.51, 'square', 0.25, 0.04, 0.09);
+        }
+
+        // SFX 2: Crank Turn (Putar Tuas Gachapon)
+        function sfxCrankTurn() {
+            initAudio();
+            const steps = [330, 392, 440, 523.25, 587.33, 659.25];
+            steps.forEach((f, idx) => {
+                playTone(f, 'square', 0.08, 0.03, idx * 0.08);
+            });
+        }
+
+        // SFX 3: Capsule Pop!
+        function sfxCapsulePop() {
+            initAudio();
+            playTone(523.25, 'triangle', 0.12, 0.06, 0);
+            playTone(783.99, 'triangle', 0.12, 0.06, 0.08);
+            playTone(1046.50, 'triangle', 0.25, 0.06, 0.16);
+        }
+
+        // SFX 4: Victory Fanfare (Buka Surat Rahasia)
+        function sfxVictoryFanfare() {
+            initAudio();
+            const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
+            const times = [0, 0.11, 0.22, 0.35, 0.52, 0.66];
+            notes.forEach((n, i) => {
+                playTone(n, 'triangle', 0.22, 0.055, times[i]);
+            });
+        }
+
+        document.getElementById('bgm-toggle-btn').addEventListener('click', () => {
+            initAudio();
+            isBgmOn = !isBgmOn;
+            const btn = document.getElementById('bgm-toggle-btn');
+            if (isBgmOn) {
+                btn.textContent = '♪ BGM: ON';
+                bgmInterval = setInterval(() => {
+                    playTone(BGM_SEQUENCE[bgmStep % BGM_SEQUENCE.length], 'triangle', 0.32, 0.03, 0);
+                    bgmStep++;
+                }, 400);
+            } else {
+                btn.textContent = '♪ BGM: OFF';
+                clearInterval(bgmInterval);
+            }
+        });
+
+        // =====================================================================
+        // 3. PARTIKEL VISUAL (HATI PIXEL & CONFETTI PERAYAAN)
+        // =====================================================================
+        function spawnHearts(x, y, count = 6) {
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.className = 'float-heart';
+                el.style.left = `${x + (Math.random() - 0.5) * 90}px`;
+                el.style.top = `${y + (Math.random() - 0.5) * 40}px`;
+                el.innerHTML = `
+                    <svg class="pixel-art w-5 h-5" viewBox="0 0 7 7">
+                        <rect x="1" y="1" width="2" height="1" fill="#D98A9C"/>
+                        <rect x="4" y="1" width="2" height="1" fill="#D98A9C"/>
+                        <rect x="1" y="2" width="5" height="2" fill="#D98A9C"/>
+                        <rect x="2" y="4" width="3" height="1" fill="#D98A9C"/>
+                        <rect x="3" y="5" width="1" height="1" fill="#D98A9C"/>
+                    </svg>
+                `;
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 950);
+            }
+        }
+
+        function spawnPixelConfetti(amount = 28) {
+            const colors = ['#D98A9C', '#E8B86D', '#A8C3A7', '#C4B0D9', '#C46B80'];
+            for (let i = 0; i < amount; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'pixel-confetti';
+                const size = Math.random() > 0.5 ? 8 : 6;
+                piece.style.width = `${size}px`;
+                piece.style.height = `${size}px`;
+                piece.style.backgroundColor = colors[i % colors.length];
+                piece.style.border = '1px solid #3B2831';
+                piece.style.left = `${Math.random() * 100}vw`;
+                piece.style.animationDuration = `${2.2 + Math.random() * 2}s`;
+                piece.style.animationDelay = `${Math.random() * 0.6}s`;
+                document.body.appendChild(piece);
+                setTimeout(() => piece.remove(), 4500);
+            }
+        }
+
+        // =====================================================================
+        // 4. NAVIGASI STAGE & STATE PERMAINAN
+        // =====================================================================
+        const stageIntro = document.getElementById('stage-intro');
+        const stageGacha = document.getElementById('stage-gacha');
+        const stageLetter = document.getElementById('stage-letter');
+
+        let unlockedCount = 0;
+        let isSpinning = false;
+        let activeModalCapsuleIndex = null;
+
+        function switchStage(targetStage) {
+            [stageIntro, stageGacha, stageLetter].forEach((s) => s.classList.add('stage-hidden'));
+            targetStage.classList.remove('stage-hidden');
+        }
+
+        // Render 5 Slot Tray Koleksi Kapsul
+        function renderCollectionTray() {
+            const tray = document.getElementById('collection-tray');
+            tray.innerHTML = '';
+
+            CAPSULES_DATA.forEach((cap, idx) => {
+                const isUnlocked = idx < unlockedCount;
+                const slotBtn = document.createElement('button');
+                slotBtn.type = 'button';
+
+                if (isUnlocked) {
+                    slotBtn.className = 'flex flex-col items-center justify-center p-1.5 rounded-lg border-2 border-[#3B2831] shadow-[2px_2px_0px_#3B2831] hover:scale-105 transition cursor-pointer';
+                    slotBtn.style.backgroundColor = cap.colorHex;
+                    slotBtn.innerHTML = `
+                        <div class="w-6 h-6 flex items-center justify-center">${cap.iconSvg}</div>
+                        <span class="font-pixel text-[6px] text-[#3B2831] bg-[#FFFBF8]/90 px-1 rounded mt-1 truncate max-w-full">
+                            #${cap.id}
+                        </span>
+                    `;
+                    slotBtn.addEventListener('click', () => {
+                        sfxCapsulePop();
+                        openCapsuleModal(idx);
+                    });
+                } else {
+                    slotBtn.className = 'flex flex-col items-center justify-center p-1.5 rounded-lg border-2 border-dashed border-[#8C6D79] bg-[#FAF3EE] opacity-70 cursor-default';
+                    slotBtn.disabled = true;
+                    slotBtn.innerHTML = `
+                        <span class="font-pixel text-xs text-[#8C6D79] h-6 flex items-center">?</span>
+                        <span class="font-pixel text-[6px] text-[#8C6D79] mt-1">#${cap.id}</span>
+                    `;
+                }
+
+                tray.appendChild(slotBtn);
+            });
+
+            document.getElementById('capsule-counter').textContent = `${unlockedCount}/5`;
+
+            const spinBtn = document.getElementById('spin-gacha-btn');
+            const secretBtn = document.getElementById('open-secret-letter-btn');
+            const remaining = 5 - unlockedCount;
+
+            if (remaining > 0) {
+                spinBtn.textContent = `PUTAR GACHA (${remaining}/5)`;
+                spinBtn.classList.remove('hidden');
+                secretBtn.classList.add('hidden');
+            } else {
+                spinBtn.classList.add('hidden');
+                secretBtn.classList.remove('hidden');
+            }
+        }
+
+        // =====================================================================
+        // 5. EVENT LISTENER STAGE 1 -> STAGE 2 (LOVE GACHAPON)
+        // =====================================================================
+        document.getElementById('press-start-btn').addEventListener('click', (e) => {
+            sfxCoinInsert();
+            const rect = e.currentTarget.getBoundingClientRect();
+            spawnHearts(rect.left + rect.width / 2, rect.top, 6);
+            renderCollectionTray();
+            setTimeout(() => {
+                switchStage(stageGacha);
+            }, 260);
+        });
+
+        // =====================================================================
+        // 6. LOGIKA PUTAR GACHA & MODAL HADIAH KAPSUL
+        // =====================================================================
+        const spinGachaBtn = document.getElementById('spin-gacha-btn');
+        const gachaponMachine = document.getElementById('gachapon-machine');
+        const gachaCrank = document.getElementById('gacha-crank');
+        const dispensedCapsule = document.getElementById('dispensed-capsule');
+        const dispensedTopColor = document.getElementById('dispensed-top-color');
+        const gachaCharLeft = document.getElementById('gacha-char-left');
+        const gachaCharRight = document.getElementById('gacha-char-right');
+
+        spinGachaBtn.addEventListener('click', () => {
+            if (isSpinning || unlockedCount >= CAPSULES_DATA.length) return;
+            isSpinning = true;
+            spinGachaBtn.disabled = true;
+
+            const currentCap = CAPSULES_DATA[unlockedCount];
+            sfxCrankTurn();
+
+            // Animasi mesin bergetar, tuas berputar, dan karakter bersorak melompat
+            gachaponMachine.classList.add('animate-machine-shake');
+            gachaCrank.classList.add('animate-crank-spin');
+            gachaCharLeft.classList.remove('animate-char-idle-1');
+            gachaCharRight.classList.remove('animate-char-idle-2');
+            gachaCharLeft.classList.add('animate-char-cheer');
+            gachaCharRight.classList.add('animate-char-cheer');
+
+            setTimeout(() => {
+                // Sembunyikan bola dari dalam kubah kaca
+                const domeBall = document.getElementById(currentCap.domeId);
+                if (domeBall) domeBall.style.opacity = '0.15';
+
+                // Tampilkan bola jatuh dari chute
+                dispensedTopColor.setAttribute('fill', currentCap.colorHex);
+                dispensedCapsule.classList.remove('hidden');
+                dispensedCapsule.classList.add('animate-capsule-drop');
+                sfxCapsulePop();
+
+                const rect = dispensedCapsule.getBoundingClientRect();
+                spawnHearts(rect.left + 16, rect.top, 7);
+            }, 650);
+
+            setTimeout(() => {
+                // Bersihkan animasi & buka modal hadiah
+                gachaponMachine.classList.remove('animate-machine-shake');
+                gachaCrank.classList.remove('animate-crank-spin');
+                gachaCharLeft.classList.remove('animate-char-cheer');
+                gachaCharRight.classList.remove('animate-char-cheer');
+                gachaCharLeft.classList.add('animate-char-idle-1');
+                gachaCharRight.classList.add('animate-char-idle-2');
+
+                dispensedCapsule.classList.add('hidden');
+                dispensedCapsule.classList.remove('animate-capsule-drop');
+
+                const openedIdx = unlockedCount;
+                unlockedCount++;
+                renderCollectionTray();
+
+                isSpinning = false;
+                spinGachaBtn.disabled = false;
+
+                openCapsuleModal(openedIdx);
+            }, 1350);
+        });
+
+        // Modal Detail Kapsul
+        const capsuleModal = document.getElementById('capsule-modal');
+        const modalBadge = document.getElementById('modal-capsule-badge');
+        const modalIcon = document.getElementById('modal-capsule-icon');
+        const modalTitle = document.getElementById('modal-capsule-title');
+        const modalDesc = document.getElementById('modal-capsule-desc');
+        const voucherClaimArea = document.getElementById('voucher-claim-area');
+        const claimVoucherBtn = document.getElementById('claim-voucher-btn');
+        const voucherStampedBadge = document.getElementById('voucher-stamped-badge');
+
+        function openCapsuleModal(index) {
+            const cap = CAPSULES_DATA[index];
+            if (!cap) return;
+            activeModalCapsuleIndex = index;
+
+            modalBadge.textContent = cap.badge;
+            modalIcon.style.backgroundColor = cap.colorHex;
+            modalIcon.innerHTML = cap.iconSvg;
+            modalTitle.textContent = cap.title;
+            modalDesc.textContent = cap.desc;
+
+            if (cap.type === 'voucher') {
+                voucherClaimArea.classList.remove('hidden');
+                if (cap.claimed) {
+                    claimVoucherBtn.classList.add('hidden');
+                    voucherStampedBadge.classList.remove('hidden');
+                } else {
+                    claimVoucherBtn.classList.remove('hidden');
+                    voucherStampedBadge.classList.add('hidden');
+                }
+            } else {
+                voucherClaimArea.classList.add('hidden');
+            }
+
+            capsuleModal.classList.remove('hidden');
+        }
+
+        claimVoucherBtn.addEventListener('click', (e) => {
+            if (activeModalCapsuleIndex === null) return;
+            CAPSULES_DATA[activeModalCapsuleIndex].claimed = true;
+            sfxCoinInsert();
+            claimVoucherBtn.classList.add('hidden');
+            voucherStampedBadge.classList.remove('hidden');
+            const rect = voucherStampedBadge.getBoundingClientRect();
+            spawnHearts(rect.left + 40, rect.top, 6);
+        });
+
+        function closeCapsuleModal() {
+            capsuleModal.classList.add('hidden');
+        }
+
+        document.getElementById('close-capsule-modal').addEventListener('click', closeCapsuleModal);
+        document.getElementById('save-capsule-btn').addEventListener('click', closeCapsuleModal);
+        capsuleModal.addEventListener('click', (e) => {
+            if (e.target === capsuleModal) closeCapsuleModal();
+        });
+
+        // =====================================================================
+        // 7. STAGE 3: SECRET LETTER & TYPEWRITER + PIXEL CONFETTI
+        // =====================================================================
+        const secretLetterText = document.getElementById('secret-letter-text');
+        const secretLetterCursor = document.getElementById('secret-letter-cursor');
+        let letterTimer = null;
+
+        function startSecretTypewriter() {
+            clearInterval(letterTimer);
+            secretLetterText.textContent = '';
+            secretLetterCursor.style.display = 'inline-block';
+            let i = 0;
+
+            letterTimer = setInterval(() => {
+                if (i < SECRET_LETTER_CONTENT.length) {
+                    secretLetterText.textContent += SECRET_LETTER_CONTENT.charAt(i);
+                    i++;
+                } else {
+                    clearInterval(letterTimer);
+                    secretLetterCursor.style.display = 'none';
+                }
+            }, 26);
+        }
+
+        document.getElementById('open-secret-letter-btn').addEventListener('click', () => {
+            sfxVictoryFanfare();
+            spawnPixelConfetti(32);
+            switchStage(stageLetter);
+            startSecretTypewriter();
+        });
+
+        document.getElementById('show-all-letter-btn').addEventListener('click', () => {
+            clearInterval(letterTimer);
+            secretLetterText.textContent = SECRET_LETTER_CONTENT;
+            secretLetterCursor.style.display = 'none';
+        });
+
+        document.getElementById('back-to-gacha-btn').addEventListener('click', () => {
+            switchStage(stageGacha);
+        });
+
+        document.getElementById('reset-game-btn').addEventListener('click', () => {
+            unlockedCount = 0;
+            CAPSULES_DATA.forEach((cap) => {
+                if (cap.type === 'voucher') cap.claimed = false;
+                const domeBall = document.getElementById(cap.domeId);
+                if (domeBall) domeBall.style.opacity = '1';
+            });
+            renderCollectionTray();
+            switchStage(stageIntro);
+        });
+    </script>
+</body>
+</html>
